@@ -9,43 +9,44 @@ It does this by programmatically creating an Administrator role in the Microsoft
  
 
 The Application
-image
+
+<img src='./Pics/1.png' >
 
 When you run the application for the first time, you will need to click the Register link and create an account called Admin@BlazorHelpWebsite.com.
 
  
 
-image
+<img src='./Pics/2.png' >
 
 The Entity Framework Core migrations will run (to create the database)…
 
  
 
-image
+<img src='./Pics/3.png' >
 
 …and you will then be able to log into the application with that account.
 
  
 
-image
+<img src='./Pics/4.png' >
 
 The application is coded to programmatically add that account to the Administrators role if the user navigates to the Administration page and they are not an Administrator…
 
  
 
-image
+<img src='./Pics/26.png' >
 
 …but to have the application recognize this, you will have to log out and log back in.
 
  
 
-image
+<img src='./Pics/5.png' >
 
 When you log back in, you will be able to navigate to the Administration page and see the User Administration.
 
  
 
-image
+<img src='./Pics/6.png' >
 
 Clicking the Edit button next to an existing user allows you to update the email address of the user, their password (the password will only update if you actually make a change), and their Role (either Users or Administrators – Note: only users in the Administrators role can access the Administration page).
 
@@ -53,129 +54,167 @@ You can either press Save to update the user, or Delete to remove the user from 
 
  
 
-image
+<img src='./Pics/7.png' >
 
 The Add User button allows you to create a new user.
 
  
 
-Create The Application
-image
+# Create The Application
+
+
 
 Using Visual Studio 2019 (or higher), create a Blazor server side application.
 
- 
+<img src='./Pics/8.png' >
 
-image
 
 Change the Authentication…
 
- 
+<img src='./Pics/9.png' >
 
-image
 
 … and select Individual User Accounts.
 
 Click OK and complete the process to create the application.
 
- 
 
-image
+# Using SQL SERVER and Roles
 
-When the application opens in Visual Studio, to add support for Roles, open the Startup.cs file, and change the following code:
+Add nuggets
 
- 
+Microsoft.EntityFrameworkCore.SqlServer
+Microsoft.EntityFrameworkCore.Tools
+Microsoft.EntityFrameworkCore
+
+
+<img width="411" alt="Snímka obrazovky 2024-04-08 o 12 56 55" src="https://github.com/VPA-predmet/CV_6_example_of_authentification_and_roles/assets/161576750/b3401602-89c4-4083-8c39-069fbdefd9f4">
+
+
+
+When the application opens in Visual Studio, to add support for SQL Server , open the Program.cs file, and change the following code:
+
+
+```
+    options.UseSqlite(connectionString));
+
+```
+
+to:
+
+```
+    options.UseSqlServer(connectionString));
+
+```
+
+
+setting up a connection to an existing database in file appsettings.json
+
+
+```
+   "ConnectionStrings": {
+    "DefaultConnection": "Server=localhost,1433; Database=DB_NAme; User ID=ADMIN_NAME; Password=DB_PASSWORD; Persist Security Info=False; Encrypt=False"
+  },
+
+```
+
+
+When the application opens in Visual Studio, to add support for Roles, open the Program.cs file, and change the following code:
+
+
+``` 
 
             services.AddDefaultIdentity<IdentityUser>()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
  
 
- 
+``` 
 
 to:
 
- 
+``` 
 
             services.AddDefaultIdentity<IdentityUser>()
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
  
+```
 
-image
+<img src='./Pics/11.png' >
 
 Add a new page to the project (and a link to it in the navigation menu – see: Creating A Step-By-Step End-To-End Database Server-Side Blazor Application for help doing this), called Administration.razor using the following code:
 
  
 
+ ```
+
+  @page "/administration"
+  @using Microsoft.AspNetCore.Authorization;
+  @using Microsoft.AspNetCore.Identity;
+  @inject UserManager<IdentityUser> _UserManager
+  @inject RoleManager<IdentityRole> _RoleManager
+  @inject AuthenticationStateProvider AuthenticationStateProvider
+  <h3>Administration</h3>
+  <AuthorizeView>
+      <Authorized>
+          @if (@context.User.IsInRole(ADMINISTRATION_ROLE))
+          {
+              <p>You are in @ADMINISTRATION_ROLE </p>
+          }
+          else
+          {
+              <p>You're not signed in as a user in @ADMINISTRATION_ROLE.</p>
+          }
+      </Authorized>
+      <NotAuthorized>
+          <p>You're not loggged in.</p>
+      </NotAuthorized>
+  </AuthorizeView>
+  @code {
+      [CascadingParameter]
+      private Task<AuthenticationState> authenticationStateTask { get; set; }
+      string ADMINISTRATION_ROLE = "Administrators";
+      System.Security.Claims.ClaimsPrincipal CurrentUser;
+      protected override async Task OnInitializedAsync()
+      {
+          // ensure there is a ADMINISTRATION_ROLE
+          var RoleResult = await _RoleManager.FindByNameAsync(ADMINISTRATION_ROLE);
+          if (RoleResult == null)
+          {
+              // Create ADMINISTRATION_ROLE Role
+              await _RoleManager.CreateAsync(new IdentityRole(ADMINISTRATION_ROLE));
+          }
+          // Ensure a user named Admin@BlazorHelpWebsite.com is an Administrator
+          var user = await _UserManager.FindByNameAsync("Admin@BlazorHelpWebsite.com");
+          if (user != null)
+          {
+              // Is Admin@BlazorHelpWebsite.com in administrator role?
+              var UserResult = await _UserManager.IsInRoleAsync(user, ADMINISTRATION_ROLE);
+              if (!UserResult)
+              {
+                  // Put admin in Administrator role
+                  await _UserManager.AddToRoleAsync(user, ADMINISTRATION_ROLE);
+              }
+          }
+          // Get the current logged in user
+          CurrentUser = (await authenticationStateTask).User;
+      }
+  }
+ 
+```
+
+# Run the application.
+
+<img src='./Pics/12.png' >
+
  
 
-@page "/administration"
-@using Microsoft.AspNetCore.Authorization;
-@using Microsoft.AspNetCore.Identity;
-@inject UserManager<IdentityUser> _UserManager
-@inject RoleManager<IdentityRole> _RoleManager
-@inject AuthenticationStateProvider AuthenticationStateProvider
-<h3>Administration</h3>
-<AuthorizeView>
-    <Authorized>
-        @if (@context.User.IsInRole(ADMINISTRATION_ROLE))
-        {
-            <p>You are in @ADMINISTRATION_ROLE </p>
-        }
-        else
-        {
-            <p>You're not signed in as a user in @ADMINISTRATION_ROLE.</p>
-        }
-    </Authorized>
-    <NotAuthorized>
-        <p>You're not loggged in.</p>
-    </NotAuthorized>
-</AuthorizeView>
-@code {
-    [CascadingParameter]
-    private Task<AuthenticationState> authenticationStateTask { get; set; }
-    string ADMINISTRATION_ROLE = "Administrators";
-    System.Security.Claims.ClaimsPrincipal CurrentUser;
-    protected override async Task OnInitializedAsync()
-    {
-        // ensure there is a ADMINISTRATION_ROLE
-        var RoleResult = await _RoleManager.FindByNameAsync(ADMINISTRATION_ROLE);
-        if (RoleResult == null)
-        {
-            // Create ADMINISTRATION_ROLE Role
-            await _RoleManager.CreateAsync(new IdentityRole(ADMINISTRATION_ROLE));
-        }
-        // Ensure a user named Admin@BlazorHelpWebsite.com is an Administrator
-        var user = await _UserManager.FindByNameAsync("Admin@BlazorHelpWebsite.com");
-        if (user != null)
-        {
-            // Is Admin@BlazorHelpWebsite.com in administrator role?
-            var UserResult = await _UserManager.IsInRoleAsync(user, ADMINISTRATION_ROLE);
-            if (!UserResult)
-            {
-                // Put admin in Administrator role
-                await _UserManager.AddToRoleAsync(user, ADMINISTRATION_ROLE);
-            }
-        }
-        // Get the current logged in user
-        CurrentUser = (await authenticationStateTask).User;
-    }
-}
- 
-
-image
-
-Run the application.
-
- 
-
-image
+<img src='./Pics/13.png' >
 
 Click the Register link and create a user named Admin@BlazorHelpWebsite.com.
 
- 
 
-image
+<img src='./Pics/14.png' >
 
 The Entity Framework Core migration page will show.
 
@@ -183,19 +222,19 @@ Click Apply Migrations.
 
  
 
-image
+<img src='./Pics/15.png' >
 
 After the migrations are applied, refresh the page in the web browser.
 
  
 
-image
+<img src='./Pics/16.png' >
 
 Click Continue.
 
  
 
-image
+<img src='./Pics/17.png' >
 
 You will now be logged in.
 
@@ -205,13 +244,13 @@ You will see a message that indicates your are not in the Administrators role (e
 
  
 
-image
+<img src='./Pics/18.png' >
 
 Log out and log back in again, and you will now be recognized as a user in the Administrators role.
 
  
 
-image
+<img src='./Pics/19.png' >
 
 Create another user.
 
@@ -219,12 +258,13 @@ No matter how many times you log in and out, that user will not be placed in the
 
  
 
-List Users
+# List Users
+
 The first step is to list the current users in the application.
 
 First, let’s add some fields and variables to the @code section of the Administration.razor page that we will need now and to support code we will add later:
 
- 
+ ```
 
     // Property used to add or edit the currently selected user
     IdentityUser objUser = new IdentityUser();
@@ -239,12 +279,12 @@ First, let’s add some fields and variables to the @code section of the Adminis
     // To enable showing the Popup
     bool ShowPopup = false;
  
-
+```
 Let’s also add method stubs for methods we will need later.
 
 We add them now because markup that we will add soon, will refer to these methods, and the code will not compile if the methods do not exist (even though at this point the methods will not actually perform the eventual functionality).
 
- 
+``` 
 
     void AddNewUser()
     {
@@ -263,14 +303,14 @@ We add them now because markup that we will add soon, will refer to these method
         // Close the Popup
         ShowPopup = false;
     }
- 
+``` 
 
 Now let us add the code to display the existing users.
 
 Add the following method:
 
  
-
+```
     public void GetUsers()
     {
         // clear any error messages
@@ -290,16 +330,16 @@ Add the following method:
             ColUsers.Add(item);
         }
     }
- 
+ ```
 
 Also, add the following code to the end of the protected override async Task OnInitializedAsync() method so that the getUsers() method will be invoked when the user navigates to the page:
 
- 
+ ```
 
         // Get the users
         GetUsers();
  
-
+```
 Finally, in the HTML markup section, at the top of the file, replace this line of code:
 
  
@@ -310,7 +350,7 @@ Finally, in the HTML markup section, at the top of the file, replace this line o
 With the following code:
 
  
-
+```
           <table class="table">
                 <thead>
                     <tr>
@@ -337,9 +377,9 @@ With the following code:
                     }
                 </tbody>
             </table>
- 
+``` 
 
-image
+<img src='./Pics/20.png' >
 
 When we log in with the Admin@BlazorHelpWebsite.com account and navigate to the Administration page, we see a list of the users.
 
@@ -347,10 +387,11 @@ Note, the Edit button will not actually work at this point.
 
  
 
-Add Users
+# Add Users
+
 In the UI markup, under the recently added table markup, add the following code to implement the popup to add and edit users and an Add User button to trigger it:
 
- 
+``` 
 
 @if (ShowPopup)
 {
@@ -421,10 +462,13 @@ In the UI markup, under the recently added table markup, add the following code 
         </div>
     </div>
 }
+
 <button class="btn btn-success" @onclick="AddNewUser">Add User</button>
+
+```
 In the procedure code, change the AddNewUser() method to the following (this is triggered when the Add User button is clicked):
 
- 
+``` 
 
     void AddNewUser()
     {
@@ -437,10 +481,10 @@ In the procedure code, change the AddNewUser() method to the following (this is 
         ShowPopup = true;
     }
  
-
+```
 Finally, alter the SaveUser() method to the following:
 
- 
+``` 
 
    async Task SaveUser()
     {
@@ -504,35 +548,36 @@ Finally, alter the SaveUser() method to the following:
         }
     }
  
-
-image
+```
+<img src='./Pics/21.png' >
 
 When we run the application, we can now click the Add User button to open the popup.
 
  
 
-image
+<img src='./Pics/22.png' >
 
 The popup allows us to enter the information required to create a new user.
 
  
 
-image
+<img src='./Pics/23.png' >
 
 We can enter information to create a new user, and receive error messages if there are any.
 
  
 
-image
+<img src='./Pics/24.png' >
 
 The new user is created and can now log in using the password we created.
 
  
 
-Update (And Delete)
+# Update (And Delete)
+
 To enable the Edit button to work, alter the EditUser method to the following:
 
- 
+``` 
 
     async Task EditUser(IdentityUser _IdentityUser)
     {
@@ -559,18 +604,18 @@ To enable the Edit button to work, alter the EditUser method to the following:
         // Open the Popup
         ShowPopup = true;
     }
- 
+``` 
 
 Next, to enable updating to work, alter the SaveUser() method to replace the following code:
 
- 
+``` 
 
          // To be implemented later...
  
-
+```
 with:
 
- 
+ ```
 
                 // Get the user
                 var user = await _UserManager.FindByIdAsync(objUser.Id);
@@ -636,9 +681,11 @@ with:
                             .RemoveFromRoleAsync(user, ADMINISTRATION_ROLE);
                     }
                 }
+
+```
 Finally, alter the DeleteUser() method to the following:
 
- 
+``` 
 
     async Task DeleteUser()
     {
@@ -654,9 +701,11 @@ Finally, alter the DeleteUser() method to the following:
         // Refresh Users
         GetUsers();
     }
- 
+```
 
-image
+
+<img src='./Pics/25.png' >
+
 
 When you run the application, you will now have the ability to update and delete users.
 
