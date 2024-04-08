@@ -503,6 +503,8 @@ Finally, alter the SaveUser() method to the following:
                     {
                         UserName = objUser.UserName,
                         Email = objUser.Email
+                        // By default you have to confirm your email after creating an account, here we do it automatically when you create a user
+                        EmailConfirmed = true
                     };
                 var CreateResult =
                     await _UserManager
@@ -708,5 +710,34 @@ Finally, alter the DeleteUser() method to the following:
 
 
 When you run the application, you will now have the ability to update and delete users.
+
+
+
+[Introduction to Identity on ASP.NET Core ](https://learn.microsoft.com/en-us/aspnet/core/security/authentication/identity?view=aspnetcore-3.0&tabs=visual-studio)
+
+[Role-based authorization in ASP.NET Core](https://learn.microsoft.com/en-us/aspnet/core/security/authorization/roles?view=aspnetcore-8.0&viewFallbackFrom=aspnetcore-3.0)
+
+[Role Based Security in an ASP.NET Core Application ](https://www.dotnetcurry.com/aspnet-core/role-based-security)
+
+[Docker SQL Server ](https://www.freecodecamp.org/news/cjn-how-to-connect-your-microsoft-sql-server-docker-container-with-azure-data-studio/)
+
+
+# More Links
+
+[Different ways of Authorization in Blazor + Redirect To Login Blazor ](https://askianoor.medium.com/different-ways-of-authorization-in-blazor-redirect-to-login-blazor-46120d629387)
+
+[Blazor tutorials ](https://blazorhelpwebsite.com/)
+
+[Blazor more info ](https://www.syncfusion.com/blogs/post/role-based-authorization-blazor-file-manager)
+
+[Blazor more info 2 ](https://www.pragimtech.com/blog/blazor/asp.net-core-identity-setup-in-blazor-application/#google_vignette)
+
+
+# Video tutorials
+
+[Site youtube1 ](https://www.youtube.com/watch?v=n5QvJGCDKYs)
+
+[Site youtube2 ](https://www.youtube.com/watch?v=tNzSuwV62Lw&t=1191s)
+
 
  
